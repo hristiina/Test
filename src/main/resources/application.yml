@@ -1,0 +1,23 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/postgres}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+  jpa:
+    hibernate:
+      # Schema lives outside the app (created externally). Confirmed against the
+      # real users/roles/user_roles DDL on 2026-06-18 -- safe to validate.
+      ddl-auto: validate
+    open-in-view: false
+
+app:
+  jwt:
+    # Dev-only default; must be overridden via JWT_SECRET in any non-local environment.
+    # HS256 requires a key of at least 256 bits (32 bytes).
+    secret: ${JWT_SECRET:changeme-local-dev-secret-please-override-min-32-bytes}
+    expiration-minutes: ${JWT_EXPIRATION_MINUTES:30}
+  cors:
+    allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:3000}
+
+server:
+  port: ${SERVER_PORT:8080}
