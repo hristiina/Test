@@ -60,6 +60,15 @@ public class AuthController {
         return ResponseEntity.ok(new LoginResponse(token, "Bearer", jwtService.getExpirationSeconds()));
     }
 
+    /**
+     * Stateless no-op: there is no server-side session or token store to invalidate.
+     * The client is expected to discard the token after this returns.
+     */
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout() {
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/register")
     public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
         if (userRepository.existsByUsername(request.username())) {

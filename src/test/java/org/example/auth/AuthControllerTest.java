@@ -108,6 +108,12 @@ class AuthControllerTest {
     }
 
     @Test
+    void logoutReturnsNoContent() throws Exception {
+        mockMvc.perform(post("/api/auth/logout"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
     void registerWithValidRequestReturnsCreated() throws Exception {
         when(userRepository.existsByUsername("newuser")).thenReturn(false);
         when(userRepository.existsByEmail("newuser@example.com")).thenReturn(false);
