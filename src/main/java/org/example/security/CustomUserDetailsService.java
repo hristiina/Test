@@ -2,7 +2,6 @@ package org.example.security;
 
 import org.example.user.User;
 import org.example.user.UserRepository;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -29,7 +28,7 @@ public class CustomUserDetailsService implements UserDetailsService {
                 .password(user.getPasswordHash())
                 .disabled(!user.isActive())
                 .authorities(user.getRoles().stream()
-                        .map(role -> new SimpleGrantedAuthority("ROLE_" + role.getName()))
+                        .map(role -> RoleAuthorities.toAuthority(role.getName()))
                         .toList())
                 .build();
     }

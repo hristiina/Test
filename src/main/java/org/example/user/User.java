@@ -24,8 +24,10 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    /** Uniqueness is enforced by the externally-managed schema (see application.yml), not by this entity. */
     private String username;
 
+    /** Uniqueness is enforced by the externally-managed schema (see application.yml), not by this entity. */
     private String email;
 
     @Column(name = "password_hash")

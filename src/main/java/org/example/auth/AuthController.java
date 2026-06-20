@@ -2,6 +2,7 @@ package org.example.auth;
 
 import jakarta.validation.Valid;
 import org.example.security.JwtService;
+import org.example.security.RoleAuthorities;
 import org.example.user.Role;
 import org.example.user.RoleRepository;
 import org.example.user.User;
@@ -52,7 +53,7 @@ public class AuthController {
 
         List<String> roleNames = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
-                .map(authority -> authority.replaceFirst("^ROLE_", ""))
+                .map(RoleAuthorities::stripPrefix)
                 .toList();
 
         String token = jwtService.generateToken(authentication.getName(), roleNames);

@@ -40,7 +40,7 @@ class JwtAuthenticationFilterTest {
         when(request.getHeader("Authorization")).thenReturn("Bearer valid-token");
         Claims claims = mock(Claims.class);
         when(claims.getSubject()).thenReturn("alice");
-        when(claims.get(eq("roles"), eq(List.class))).thenReturn(List.of("USER", "ADMIN"));
+        when(claims.get(eq(JwtService.ROLES_CLAIM), eq(List.class))).thenReturn(List.of("USER", "ADMIN"));
         when(jwtService.parseClaims("valid-token")).thenReturn(claims);
 
         filter.doFilterInternal(request, response, filterChain);
@@ -51,6 +51,23 @@ class JwtAuthenticationFilterTest {
         assertThat(authentication.getAuthorities())
                 .extracting(Object::toString)
                 .containsExactlyInAnyOrder("ROLE_USER", "ROLE_ADMIN");
+        verify(filterChain).doFilter(request, response);
+    }
+
+    @Test
+    void nonStringRolesClaimEntriesAreFilteredOutInsteadOfStringified() throws Exception {
+        when(request.getHeader("Authorization")).thenReturn("Bearer valid-token");
+        Claims claims = mock(Claims.class);
+        when(claims.getSubject()).thenReturn("alice");
+        when(claims.get(eq(JwtService.ROLES_CLAIM), eq(List.class))).thenReturn(List.of("USER", 42, true));
+        when(jwtService.parseClaims("valid-token")).thenReturn(claims);
+
+        filter.doFilterInternal(request, response, filterChain);
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        assertThat(authentication.getAuthorities())
+                .extracting(Object::toString)
+                .containsExactly("ROLE_USER");
         verify(filterChain).doFilter(request, response);
     }
 

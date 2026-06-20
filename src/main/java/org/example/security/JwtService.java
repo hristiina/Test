@@ -19,6 +19,8 @@ import java.util.List;
 @Service
 public class JwtService {
 
+    public static final String ROLES_CLAIM = "roles";
+
     private final JwtProperties jwtProperties;
     private final SecretKey signingKey;
 
@@ -33,7 +35,7 @@ public class JwtService {
 
         return Jwts.builder()
                 .subject(username)
-                .claim("roles", List.copyOf(roleNames))
+                .claim(ROLES_CLAIM, List.copyOf(roleNames))
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiry))
                 .signWith(signingKey, Jwts.SIG.HS256)
