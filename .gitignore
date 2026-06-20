@@ -15,7 +15,9 @@ out/
 !**/src/test/**/out/
 
 ### Claude Code ###
-.claude/
+.claude/*
+!.claude/agents/
+!.claude/agents/**
 
 ### Eclipse ###
 .apt_generated
