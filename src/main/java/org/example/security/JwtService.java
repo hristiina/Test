@@ -1,5 +1,6 @@
 package org.example.security;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
@@ -13,10 +14,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Issues signed JWTs for successfully authenticated users.
- *
- * <p>This service only issues tokens; validating incoming bearer tokens on
- * protected endpoints is a separate, not-yet-implemented concern.
+ * Issues and validates signed JWTs for authenticated users.
  */
 @Service
 public class JwtService {
@@ -44,5 +42,18 @@ public class JwtService {
 
     public long getExpirationSeconds() {
         return Duration.ofMinutes(jwtProperties.expirationMinutes()).toSeconds();
+    }
+
+    /**
+     * Parses and validates a bearer token's claims.
+     *
+     * @throws io.jsonwebtoken.JwtException if the token is malformed, expired, or has an invalid signature
+     */
+    public Claims parseClaims(String token) {
+        return Jwts.parser()
+                .verifyWith(signingKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }
