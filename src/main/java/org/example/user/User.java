@@ -57,6 +57,22 @@ public class User {
     protected User() {
     }
 
+    public User(String username, String email, String passwordHash, String firstName, String lastName) {
+        this.username = username;
+        this.email = email;
+        this.passwordHash = passwordHash;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.active = true;
+        LocalDateTime now = LocalDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+    }
+
+    public void addRole(Role role) {
+        roles.add(role);
+    }
+
     public Long getId() {
         return id;
     }

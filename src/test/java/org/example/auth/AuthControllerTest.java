@@ -2,6 +2,10 @@ package org.example.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.example.security.JwtService;
+import org.example.user.Role;
+import org.example.user.RoleRepository;
+import org.example.user.User;
+import org.example.user.UserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -11,15 +15,19 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.util.ReflectionTestUtils.setField;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -39,6 +47,15 @@ class AuthControllerTest {
 
     @MockitoBean
     private JwtService jwtService;
+
+    @MockitoBean
+    private UserRepository userRepository;
+
+    @MockitoBean
+    private RoleRepository roleRepository;
+
+    @MockitoBean
+    private PasswordEncoder passwordEncoder;
 
     @Test
     void loginWithValidCredentialsReturnsToken() throws Exception {
@@ -86,6 +103,73 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/login")
                         .contentType("application/json")
                         .content(objectMapper.writeValueAsString(new LoginRequest("", ""))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("invalid_request"));
+    }
+
+    @Test
+    void registerWithValidRequestReturnsCreated() throws Exception {
+        when(userRepository.existsByUsername("newuser")).thenReturn(false);
+        when(userRepository.existsByEmail("newuser@example.com")).thenReturn(false);
+        when(roleRepository.findByName("USER")).thenReturn(Optional.of(mock(Role.class)));
+        when(passwordEncoder.encode("StrongPass1")).thenReturn("hashed-password");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
+            User user = invocation.getArgument(0);
+            setField(user, "id", 42L);
+            return user;
+        });
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(
+                                new RegisterRequest("newuser", "newuser@example.com", "StrongPass1", "New", "User"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(42))
+                .andExpect(jsonPath("$.username").value("newuser"))
+                .andExpect(jsonPath("$.email").value("newuser@example.com"));
+    }
+
+    @Test
+    void registerWithExistingUsernameReturnsConflict() throws Exception {
+        when(userRepository.existsByUsername("taken")).thenReturn(true);
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(
+                                new RegisterRequest("taken", "new@example.com", "StrongPass1", "New", "User"))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("conflict"));
+    }
+
+    @Test
+    void registerWithExistingEmailReturnsConflict() throws Exception {
+        when(userRepository.existsByUsername("newuser")).thenReturn(false);
+        when(userRepository.existsByEmail("taken@example.com")).thenReturn(true);
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(
+                                new RegisterRequest("newuser", "taken@example.com", "StrongPass1", "New", "User"))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.error").value("conflict"));
+    }
+
+    @Test
+    void registerWithInvalidEmailReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(
+                                new RegisterRequest("newuser", "not-an-email", "StrongPass1", "New", "User"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error").value("invalid_request"));
+    }
+
+    @Test
+    void registerWithShortPasswordReturnsBadRequest() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType("application/json")
+                        .content(objectMapper.writeValueAsString(
+                                new RegisterRequest("newuser", "newuser@example.com", "short", "New", "User"))))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error").value("invalid_request"));
     }

@@ -1,5 +1,6 @@
 package org.example.auth;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -33,6 +34,18 @@ public class AuthExceptionHandler {
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new AuthErrorResponse("invalid_request", message, Instant.now()));
+    }
+
+    @ExceptionHandler(RegistrationConflictException.class)
+    public ResponseEntity<AuthErrorResponse> handleRegistrationConflict(RegistrationConflictException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new AuthErrorResponse("conflict", ex.getMessage(), Instant.now()));
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<AuthErrorResponse> handleDataIntegrityViolation() {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new AuthErrorResponse("conflict", "Username or email already in use", Instant.now()));
     }
 
     @ExceptionHandler(Exception.class)
